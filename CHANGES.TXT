@@ -1,0 +1,3 @@
+
+file.cpp
+- Added support for utf16 file reading for other systems than Windows
