@@ -59,6 +59,7 @@
 #include <cerrno>
 #include <cstring>
 #include <fstream>
+#include <codecvt>
 #include <locale>
 #include <type_traits>
 #include <vector>
@@ -218,7 +219,6 @@ read_fd(int fd)
     .transform([&] { return output; });
 }
 
-#ifdef _WIN32
 static bool
 has_utf16_le_bom(std::string_view text)
 {
@@ -226,7 +226,7 @@ has_utf16_le_bom(std::string_view text)
          && ((static_cast<uint8_t>(text[0]) == 0xff
               && static_cast<uint8_t>(text[1]) == 0xfe));
 }
-#endif
+
 
 template<typename T>
 tl::expected<T, std::string>
@@ -318,6 +318,21 @@ read_file(const fs::path& path, size_t size_hint)
                           size,
                           nullptr,
                           nullptr);
+    }
+  }
+#else
+  if constexpr (std::is_same<T, std::string>::value) {
+    // Convert to UTF-8 if the content starts with a UTF-16 little-endian BOM.
+    if (has_utf16_le_bom(result)) {
+      result.erase(0, 2); // Remove BOM.
+      if (result.empty()) {
+        return result;
+      }
+
+      std::u16string result_as_u16 = std::u16string((result.size() / 2) + 1, u'\0');
+      result_as_u16 = reinterpret_cast<const char16_t*>(result.c_str());
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+      result = convert.to_bytes(result_as_u16);
     }
   }
 #endif
