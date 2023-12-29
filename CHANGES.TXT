@@ -1,3 +1,6 @@
 
 file.cpp
 - Added support for utf16 file reading for other systems than Windows
+
+ccache.cpp
+- Added logging for types of hits

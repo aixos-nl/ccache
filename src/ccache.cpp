@@ -74,6 +74,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <unordered_map>
@@ -2378,6 +2379,27 @@ cache_compilation(int argc, const char* const* argv)
     initialize(ctx, argv, argv_parts.masquerading_as_compiler);
 
     const auto result = do_cache_compilation(ctx);
+
+    if (result)
+    {
+      if(*result == Statistic::direct_cache_hit)
+      {
+        std::cout << "cache hit (direct)\n";
+      }
+      else if (*result == Statistic::preprocessed_cache_hit)
+      {
+        std::cout << "cache hit (preprocessed)\n";
+      }
+      else if (*result == Statistic::local_storage_hit || *result == Statistic::local_storage_read_hit)
+      {
+        std::cout << "cache hit (local storage)\n";
+      }
+      else if (*result == Statistic::remote_storage_hit || *result == Statistic::remote_storage_read_hit)
+      {
+        std::cout << "cache hit (remote storage)\n";
+      }
+    }
+
     ctx.storage.local.increment_statistics(result ? *result
                                                   : result.error().counters());
     const auto& counters = ctx.storage.local.get_statistics_updates();
